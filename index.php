@@ -3,6 +3,16 @@ $config = require __DIR__ . '/config.php';
 require __DIR__ . '/SessionManager.php';
 $sessionManager = SessionManager::getInstance();
 $session_id = $sessionManager->getSessionId();
+
+$max_files = $config['upload']['max_files'];
+$expiry_days = $config['app']['expiry_days'];
+$max_size_mb = round($config['upload']['max_size'] / (1024 * 1024));
+$allowed_exts = array_map(function($mime) {
+    $parts = explode('/', $mime);
+    $ext = end($parts);
+    return strtoupper($ext === 'jpeg' ? 'jpg' : $ext);
+}, $config['upload']['allowed_types']);
+$allowed_exts_str = implode(', ', $allowed_exts);
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -67,7 +77,7 @@ $session_id = $sessionManager->getSessionId();
     <div class="container">
         <header>
             <h1><a href="/" style="text-decoration: none; color: inherit;">ImgHost</a></h1>
-            <p>Загрузите до 5 изображений и получите ссылку. Хранение 30 дней.</p>
+            <p>Загрузите до <?php echo $max_files; ?> изображений и получите ссылку. Хранение <?php echo $expiry_days; ?> дней.</p>
         </header>
 
         <main>
@@ -79,8 +89,8 @@ $session_id = $sessionManager->getSessionId();
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
                     <span>Перетащите изображения сюда или кликните для выбора</span>
-                    <span class="subtext">Максимум 5 файлов, до 15МБ каждый (JPG, PNG, WEBP, GIF)</span>
-                    <input type="file" id="file-input" multiple accept="image/*" hidden>
+                    <span class="subtext">Максимум <?php echo $max_files; ?> файлов, до <?php echo $max_size_mb; ?>МБ каждый (<?php echo $allowed_exts_str; ?>)</span>
+                    <input type="file" id="file-input" multiple accept="<?php echo implode(',', $config['upload']['allowed_types']); ?>" hidden>
                 </div>
             </div>
 
