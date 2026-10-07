@@ -51,11 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $config_content = file_get_contents(__DIR__ . '/../config.php');
         
         // Replace expiry_days
-        $config_content = preg_replace("/'expiry_days'\s*=>\s*\d+,/", "'expiry_days' => $expiry,", $config_content);
+        $config_content = preg_replace("/'expiry_days'\s*=>\s*\d+/", "'expiry_days' => $expiry", $config_content);
         
         // Replace allowed_types
         $types_str = "['" . implode("', '", $types) . "']";
-        $config_content = preg_replace("/'allowed_types'\s*=>\s*\[.*?\]/", "'allowed_types' => $types_str,", $config_content);
+        $config_content = preg_replace("/'allowed_types'\s*=>\s*\[.*?\]/", "'allowed_types' => $types_str", $config_content);
         
         file_put_contents(__DIR__ . '/../config.php', $config_content);
         
