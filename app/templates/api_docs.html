@@ -1,138 +1,172 @@
 {% extends "base.html" %}
 
-{% block title %}Документация API — Pic-up{% endblock %}
+{% block title %}Документация REST API — Pic-up v2.0{% endblock %}
 
 {% block content %}
-<div class="docs-container">
-    <div class="docs-hero">
-        <div class="docs-badge">REST API v2.0</div>
-        <h1>Документация публичного API Pic-up</h1>
-        <p class="docs-subtitle">
-            Публичный API для моментальной загрузки и обмена любыми файлами.<br>
+<div class="docs-wrapper">
+    <!-- Header -->
+    <div class="docs-hero-box">
+        <div class="docs-pill-badge">
+            <span class="badge-dot"></span>
+            <span>REST API Reference • v2.0</span>
+        </div>
+        <h1 class="docs-title">Документация API Pic-up</h1>
+        <p class="docs-lead">
+            Простой, быстрый и надёжный HTTP API для программной загрузки и получения файлов.<br>
             <strong>Без ключей API, без токенов, без регистрации.</strong>
         </p>
-        <div class="docs-hero-actions">
-            <a href="/docs" target="_blank" class="btn primary">Интерактивный Swagger UI ↗</a>
-            <a href="/redoc" target="_blank" class="btn secondary">ReDoc ↗</a>
+
+        <div class="docs-cta-row">
+            <a href="/docs" target="_blank" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                <span>Интерактивный Swagger UI</span>
+            </a>
+            <a href="/redoc" target="_blank" class="btn btn-secondary">
+                <span>ReDoc Спецификация</span>
+            </a>
         </div>
     </div>
 
-    <!-- Quick Navigation -->
-    <div class="docs-section">
-        <h2>Базовый URL</h2>
-        <div class="code-box">
-            <code>{{ app_url }}/api</code>
+    <!-- Base URL card -->
+    <div class="glass-card docs-card base-url-card">
+        <div class="base-url-header">
+            <span class="meta-label">Базовый адрес API (Base URL)</span>
+            <span class="meta-status">HTTPS Only • CORS Enabled</span>
+        </div>
+        <div class="code-pill-box">
+            <code id="base-url-text">{{ app_url }}/api</code>
+            <button class="copy-snippet-btn" onclick="copySnippet('{{ app_url }}/api')">Копировать</button>
         </div>
     </div>
 
     <!-- Endpoint 1: Upload -->
-    <div class="docs-section">
-        <div class="endpoint-header">
-            <span class="http-badge post">POST</span>
-            <span class="endpoint-path">/api/upload</span>
+    <div class="glass-card docs-card endpoint-card" id="endpoint-upload">
+        <div class="endpoint-top-bar">
+            <div class="method-tag post">POST</div>
+            <code class="endpoint-route">/api/upload</code>
+            <span class="endpoint-desc-badge">Загрузка файлов</span>
         </div>
-        <p>Загрузка одного или нескольких файлов (фото, видео, музыка, документы, архивы). Возвращает ссылки на просмотр, скачивание и QR-код.</p>
 
-        <h3>Параметры запроса (multipart/form-data)</h3>
-        <table class="params-table">
-            <thead>
-                <tr>
-                    <th>Поле</th>
-                    <th>Тип</th>
-                    <th>Обязательное</th>
-                    <th>Описание</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><code>files</code> или <code>file</code></td>
-                    <td>File / Binary</td>
-                    <td>Да</td>
-                    <td>Один или несколько файлов (до {{ max_files }} файлов, до {{ max_size_mb }} МБ каждый).</td>
-                </tr>
-            </tbody>
-        </table>
+        <p class="endpoint-summary">
+            Загружает один или несколько файлов любого формата (изображения, видео, аудио, архивы, документы, программы). Файлы сохраняются в защищённом хранилище Telegram и выдаются готовые ссылки.
+        </p>
 
-        <h3>Примеры запросов</h3>
+        <h3 class="section-h3">Параметры запроса (Content-Type: multipart/form-data)</h3>
+        <div class="table-responsive">
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Параметр</th>
+                        <th>Тип</th>
+                        <th>Обязательный</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>files</code> или <code>file</code></td>
+                        <td><span class="type-badge binary">binary[]</span></td>
+                        <td><span class="req-badge">Да</span></td>
+                        <td>Один или несколько файлов. Максимум <strong>{{ max_files }} файлов</strong> за один запрос, до <strong>{{ max_size_mb }} МБ</strong> каждый.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-        <div class="tabs-wrapper">
-            <div class="tabs-header">
-                <button class="tab-btn active" onclick="switchTab(event, 'tab-curl')">cURL</button>
-                <button class="tab-btn" onclick="switchTab(event, 'tab-python')">Python</button>
-                <button class="tab-btn" onclick="switchTab(event, 'tab-js')">JavaScript / Node.js</button>
-                <button class="tab-btn" onclick="switchTab(event, 'tab-php')">PHP</button>
+        <h3 class="section-h3">Примеры кода</h3>
+        <div class="code-tabs-widget">
+            <div class="tabs-nav">
+                <button class="tab-pill active" onclick="switchTab(event, 'tab-curl')">cURL</button>
+                <button class="tab-pill" onclick="switchTab(event, 'tab-python')">Python</button>
+                <button class="tab-pill" onclick="switchTab(event, 'tab-js')">JavaScript / Node.js</button>
+                <button class="tab-pill" onclick="switchTab(event, 'tab-php')">PHP</button>
             </div>
 
             <!-- Tab: cURL -->
-            <div id="tab-curl" class="tab-content active">
-                <pre class="code-block"><code># Загрузка одного файла
+            <div id="tab-curl" class="tab-pane active">
+                <div class="code-snippet-shell">
+                    <button class="btn-copy-code-block" onclick="copyCodeFromBlock('code-curl')">Копировать</button>
+                    <pre><code id="code-curl"># Загрузка одного файла
 curl -X POST "{{ app_url }}/api/upload" \
   -F "file=@photo.jpg"
 
-# Загрузка нескольких файлов
+# Загрузка нескольких файлов сразу
 curl -X POST "{{ app_url }}/api/upload" \
   -F "files=@video.mp4" \
-  -F "files=@document.pdf"</code></pre>
+  -F "files=@archive.zip"</code></pre>
+                </div>
             </div>
 
             <!-- Tab: Python -->
-            <div id="tab-python" class="tab-content">
-                <pre class="code-block"><code>import requests
+            <div id="tab-python" class="tab-pane">
+                <div class="code-snippet-shell">
+                    <button class="btn-copy-code-block" onclick="copyCodeFromBlock('code-python')">Копировать</button>
+                    <pre><code id="code-python">import requests
 
 url = "{{ app_url }}/api/upload"
 
-# Загрузка файла
+# Загрузка одного или нескольких файлов
 with open("my_video.mp4", "rb") as f:
-    files = {"files": ("my_video.mp4", f, "video/mp4")}
+    files = [
+        ("files", ("my_video.mp4", f, "video/mp4")),
+    ]
     response = requests.post(url, files=files)
+    data = response.json()
 
-data = response.json()
-print("Ссылка на подборку:", data["view_url"])
+print("Код подборки:", data["batch_code"])
+print("Ссылка на просмотр:", data["view_url"])
 for item in data["files"]:
-    print("Прямая ссылка:", item["url"])</code></pre>
+    print("Файл:", item["original_name"], "->", item["url"])</code></pre>
+                </div>
             </div>
 
             <!-- Tab: JS -->
-            <div id="tab-js" class="tab-content">
-                <pre class="code-block"><code>const formData = new FormData();
+            <div id="tab-js" class="tab-pane">
+                <div class="code-snippet-shell">
+                    <button class="btn-copy-code-block" onclick="copyCodeFromBlock('code-js')">Копировать</button>
+                    <pre><code id="code-js">const formData = new FormData();
 formData.append('files', fileInput.files[0]);
 
-fetch('{{ app_url }}/api/upload', {
-  method: 'POST',
-  body: formData
-})
-.then(res => res.json())
-.then(data => {
-  console.log('Ссылка:', data.view_url);
-  console.log('Файлы:', data.files);
-});</code></pre>
+const response = await fetch('{{ app_url }}/api/upload', {
+    method: 'POST',
+    body: formData
+});
+
+const data = await response.json();
+console.log('Подборка:', data.view_url);
+console.log('Файлы:', data.files);</code></pre>
+                </div>
             </div>
 
             <!-- Tab: PHP -->
-            <div id="tab-php" class="tab-content">
-                <pre class="code-block"><code>&lt;?php
+            <div id="tab-php" class="tab-pane">
+                <div class="code-snippet-shell">
+                    <button class="btn-copy-code-block" onclick="copyCodeFromBlock('code-php')">Копировать</button>
+                    <pre><code id="code-php">&lt;?php
 $ch = curl_init('{{ app_url }}/api/upload');
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, [
     'files[0]' => new CURLFile('/path/to/archive.zip')
 ]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$response = curl_exec($ch);
+$result = json_decode(curl_exec($ch), true);
 curl_close($ch);
 
-$result = json_decode($response, true);
-echo "Ссылка: " . $result['view_url'];
+echo "Ссылка на подборку: " . $result['view_url'];
 ?&gt;</code></pre>
+                </div>
             </div>
         </div>
 
-        <h3>Пример ответа (200 OK)</h3>
-        <pre class="code-block json"><code>{
+        <h3 class="section-h3">Формат ответа (200 OK)</h3>
+        <div class="code-snippet-shell">
+            <button class="btn-copy-code-block" onclick="copyCodeFromBlock('code-response')">Копировать</button>
+            <pre><code id="code-response">{
   "success": true,
-  "batch_code": "4121a911828f99b6",
-  "view_url": "{{ app_url }}/view/?code=4121a911828f99b6",
-  "qr_url": "{{ app_url }}/qr/?code=4121a911828f99b6",
-  "download_all_url": "{{ app_url }}/download/?code=4121a911828f99b6",
+  "batch_code": "b69e663586f2e551",
+  "view_url": "{{ app_url }}/view/?code=b69e663586f2e551",
+  "qr_url": "{{ app_url }}/qr/?code=b69e663586f2e551",
+  "download_all_url": "{{ app_url }}/download/?code=b69e663586f2e551",
   "files_count": 1,
   "files": [
     {
@@ -147,53 +181,81 @@ echo "Ссылка: " . $result['view_url'];
     }
   ]
 }</code></pre>
+        </div>
     </div>
 
     <!-- Endpoint 2: Batch Info -->
-    <div class="docs-section">
-        <div class="endpoint-header">
-            <span class="http-badge get">GET</span>
-            <span class="endpoint-path">/api/batch/{code}</span>
+    <div class="glass-card docs-card endpoint-card">
+        <div class="endpoint-top-bar">
+            <div class="method-tag get">GET</div>
+            <code class="endpoint-route">/api/batch/{code}</code>
+            <span class="endpoint-desc-badge">Метаданные подборки</span>
         </div>
-        <p>Получение информации о подборке и списка файлов в JSON формате.</p>
-        <pre class="code-block"><code>curl "{{ app_url }}/api/batch/4121a911828f99b6"</code></pre>
+        <p class="endpoint-summary">
+            Возвращает метаданные подборки, дату истечения срока, статус отправки файлов в Telegram, количество и размер каждого файла.
+        </p>
+        <div class="code-snippet-shell">
+            <pre><code>curl -s "{{ app_url }}/api/batch/b69e663586f2e551"</code></pre>
+        </div>
     </div>
 
-    <!-- Endpoint 3: File Stream -->
-    <div class="docs-section">
-        <div class="endpoint-header">
-            <span class="http-badge get">GET</span>
-            <span class="endpoint-path">/i/{filename}</span>
+    <!-- Endpoint 3: File Streaming -->
+    <div class="glass-card docs-card endpoint-card">
+        <div class="endpoint-top-bar">
+            <div class="method-tag get">GET</div>
+            <code class="endpoint-route">/i/{filename}</code>
+            <span class="endpoint-desc-badge">Потоковый просмотр</span>
         </div>
-        <p>Прямой просмотр и потоковое воспроизведение файла. Поддерживает заголовок Range (HTTP 206) для перемотки видео и аудио в любых браузерах.</p>
-        <pre class="code-block"><code>curl -I "{{ app_url }}/i/7499c60fadf544ec.mp4"</code></pre>
+        <p class="endpoint-summary">
+            Прямая отдача файла с поддержкой заголовка <code>Range</code> (HTTP 206 Partial Content). Необходим для воспроизведения и мгновенной перемотки видео и аудио в плеерах браузеров и на iOS/Android.
+        </p>
     </div>
 
     <!-- Endpoint 4: Direct Download -->
-    <div class="docs-section">
-        <div class="endpoint-header">
-            <span class="http-badge get">GET</span>
-            <span class="endpoint-path">/download/file/{filename}</span>
+    <div class="glass-card docs-card endpoint-card">
+        <div class="endpoint-top-bar">
+            <div class="method-tag get">GET</div>
+            <code class="endpoint-route">/download/file/{filename}</code>
+            <span class="endpoint-desc-badge">Прямое скачивание</span>
         </div>
-        <p>Прямое скачивание конкретного файла с заголовком <code>Content-Disposition: attachment</code> с оригинальным именем.</p>
+        <p class="endpoint-summary">
+            Скачивает конкретный файл с принудительным заголовком <code>Content-Disposition: attachment</code> и оригинальным именем файла.
+        </p>
     </div>
 
-    <!-- Endpoint 5: ZIP Download -->
-    <div class="docs-section">
-        <div class="endpoint-header">
-            <span class="http-badge get">GET</span>
-            <span class="endpoint-path">/download/{code}</span>
+    <!-- Endpoint 5: ZIP Archive -->
+    <div class="glass-card docs-card endpoint-card">
+        <div class="endpoint-top-bar">
+            <div class="method-tag get">GET</div>
+            <code class="endpoint-route">/download/{code}</code>
+            <span class="endpoint-desc-badge">ZIP Архив подборки</span>
         </div>
-        <p>Скачивание всех файлов подборки одним ZIP архивом.</p>
+        <p class="endpoint-summary">
+            Динамически упаковывает все файлы подборки в единый ZIP-архив и отдаёт его клиенту.
+        </p>
     </div>
 </div>
 
 <script>
 function switchTab(evt, tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
     evt.currentTarget.classList.add('active');
     document.getElementById(tabId).classList.add('active');
+}
+
+function copySnippet(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        if (window.showToast) window.showToast('Базовый URL скопирован!');
+    });
+}
+
+function copyCodeFromBlock(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.innerText).then(() => {
+        if (window.showToast) window.showToast('Код скопирован в буфер обмена!');
+    });
 }
 </script>
 {% endblock %}

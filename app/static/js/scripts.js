@@ -1,14 +1,25 @@
+// Pic-up v2.0 - Core Interactive Logic & Toast System
+
 document.addEventListener('DOMContentLoaded', () => {
     const MAX_FILES = 10;
     const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
+    // Elements
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
+    const previewSection = document.getElementById('preview-section');
     const previewContainer = document.getElementById('preview-container');
+    const previewCount = document.getElementById('preview-count');
+    const clearAllBtn = document.getElementById('clear-all-btn');
     const uploadBtn = document.getElementById('upload-btn');
+    const stationActions = document.getElementById('station-actions');
+
     const progressContainer = document.getElementById('progress-container');
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
+    const progressBytes = document.getElementById('progress-bytes');
+    const progressStatusText = document.getElementById('progress-status-text');
+
     const resultContainer = document.getElementById('result-container');
     const shareLink = document.getElementById('share-link');
     const copyBtn = document.getElementById('copy-btn');
@@ -17,16 +28,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let filesToUpload = [];
     let isUploading = false;
 
+    // --- Toast System ---
+    window.showToast = function(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        
+        let iconSvg = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        `;
+        if (type === 'error') {
+            iconSvg = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            `;
+        }
+
+        toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px) scale(0.9)';
+            toast.style.transition = 'all 0.25s ease';
+            setTimeout(() => toast.remove(), 250);
+        }, 3000);
+    };
+
+    // --- Drag and Drop Handlers ---
     if (dropZone && fileInput) {
-        // Drag & Drop
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
             dropZone.addEventListener(event, preventDefault);
         });
-        
+
         ['dragenter', 'dragover'].forEach(event => {
             dropZone.addEventListener(event, () => dropZone.classList.add('active'));
         });
-        
+
         ['dragleave', 'drop'].forEach(event => {
             dropZone.addEventListener(event, () => dropZone.classList.remove('active'));
         });
@@ -43,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.value = '';
         });
 
-        // Paste from clipboard
+        // Clipboard Paste
         document.addEventListener('paste', (e) => {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             const files = [];
@@ -54,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (files.length > 0) {
                 handleFiles(files);
+                window.showToast(`Добавлено ${files.length} файл(ов) из буфера обмена`);
             }
         });
     }
@@ -69,44 +115,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    function getFileIcon(type, name) {
-        const ext = name.split('.').pop().toLowerCase();
-        if (type.startsWith('image/')) return '🖼️';
-        if (type.startsWith('video/') || ['mp4', 'mkv', 'webm', 'mov'].includes(ext)) return '🎬';
-        if (type.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'flac'].includes(ext)) return '🎵';
-        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '📦';
-        if (['pdf', 'doc', 'docx', 'txt', 'md'].includes(ext)) return '📄';
-        return '📁';
+    function getExtension(name) {
+        return name.split('.').pop().toUpperCase() || 'FILE';
     }
 
     function handleFiles(files) {
         if (isUploading) return;
 
-        const newCount = filesToUpload.length + Array.from(files).length;
-        if (newCount > MAX_FILES) {
-            alert(`Максимум ${MAX_FILES} файлов разрешено загрузить за раз`);
+        const incoming = Array.from(files);
+        if (filesToUpload.length + incoming.length > MAX_FILES) {
+            window.showToast(`Максимум ${MAX_FILES} файлов разрешено загрузить за раз`, 'error');
             return;
         }
 
-        Array.from(files).forEach(file => {
-            // Validate size
+        let addedCount = 0;
+        incoming.forEach(file => {
             if (file.size > MAX_SIZE) {
-                alert(`Файл "${file.name}" превышает максимальный размер 50 МБ`);
+                window.showToast(`Файл "${file.name}" превышает 50 МБ`, 'error');
                 return;
             }
-
             filesToUpload.push(file);
-            createPreview(file);
+            createPreviewCard(file);
+            addedCount++;
         });
 
-        updateUploadButton();
+        if (addedCount > 0) {
+            updateUIState();
+        }
     }
 
-    function createPreview(file) {
-        const item = document.createElement('div');
-        item.className = 'preview-item';
+    function createPreviewCard(file) {
+        if (!previewContainer) return;
+
+        const card = document.createElement('div');
+        card.className = 'preview-card-item';
 
         const isImg = file.type.startsWith('image/');
+        const ext = getExtension(file.name);
 
         if (isImg) {
             const reader = new FileReader();
@@ -114,47 +159,81 @@ document.addEventListener('DOMContentLoaded', () => {
                 const img = document.createElement('img');
                 img.src = e.target.result;
                 img.alt = file.name;
-                item.appendChild(img);
+                const overlay = document.createElement('div');
+                overlay.className = 'preview-img-overlay';
+                card.prepend(overlay);
+                card.prepend(img);
             };
             reader.readAsDataURL(file);
-        } else {
-            const genericDiv = document.createElement('div');
-            genericDiv.className = 'preview-generic';
-            const icon = getFileIcon(file.type, file.name);
-            genericDiv.innerHTML = `
-                <div class="preview-generic-icon">${icon}</div>
-                <div class="preview-generic-name" title="${file.name}">${file.name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">${formatBytes(file.size)}</div>
+
+            card.innerHTML = `
+                <div></div>
+                <div style="z-index: 2;">
+                    <div class="preview-file-name" title="${file.name}">${file.name}</div>
+                    <div class="preview-file-size">${formatBytes(file.size)}</div>
+                </div>
             `;
-            item.appendChild(genericDiv);
+        } else {
+            card.innerHTML = `
+                <div class="preview-generic-box">
+                    <div class="file-type-pill">${ext}</div>
+                    <div class="preview-file-name" title="${file.name}">${file.name}</div>
+                    <div class="preview-file-size">${formatBytes(file.size)}</div>
+                </div>
+            `;
         }
 
         const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
+        removeBtn.className = 'btn-remove-preview';
         removeBtn.innerHTML = '&times;';
-        removeBtn.title = 'Удалить';
+        removeBtn.title = 'Удалить из списка';
         removeBtn.addEventListener('click', (ev) => {
             ev.stopPropagation();
             filesToUpload = filesToUpload.filter(f => f !== file);
-            item.remove();
-            updateUploadButton();
+            card.remove();
+            updateUIState();
         });
 
-        item.appendChild(removeBtn);
-        previewContainer.appendChild(item);
+        card.appendChild(removeBtn);
+        previewContainer.appendChild(card);
     }
 
-    function updateUploadButton() {
+    function updateUIState() {
+        const count = filesToUpload.length;
         if (uploadBtn) {
-            uploadBtn.disabled = filesToUpload.length === 0 || isUploading;
+            uploadBtn.disabled = count === 0 || isUploading;
+        }
+
+        if (previewSection && previewCount) {
+            if (count > 0) {
+                previewSection.style.display = 'block';
+                previewCount.innerText = `${count} ${pluralizeFiles(count)}`;
+            } else {
+                previewSection.style.display = 'none';
+            }
         }
     }
 
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', uploadFiles);
+    function pluralizeFiles(n) {
+        if (n % 10 === 1 && n % 100 !== 11) return 'файл';
+        if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return 'файла';
+        return 'файлов';
     }
 
-    function uploadFiles() {
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            filesToUpload = [];
+            if (previewContainer) previewContainer.innerHTML = '';
+            updateUIState();
+        });
+    }
+
+    // --- Upload Trigger ---
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', startUpload);
+    }
+
+    function startUpload() {
         if (filesToUpload.length === 0 || isUploading) return;
 
         isUploading = true;
@@ -164,20 +243,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Hide inputs, show progress
-        dropZone.style.display = 'none';
-        uploadBtn.style.display = 'none';
-        previewContainer.style.display = 'none';
-        progressContainer.style.display = 'block';
+        if (dropZone) dropZone.style.display = 'none';
+        if (previewSection) previewSection.style.display = 'none';
+        if (stationActions) stationActions.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'block';
+
         progressFill.style.width = '0%';
         progressText.innerText = '0%';
+        if (progressStatusText) progressStatusText.innerText = 'Загрузка файлов на сервер...';
 
         const xhr = new XMLHttpRequest();
+        let totalBytes = filesToUpload.reduce((acc, f) => acc + f.size, 0);
 
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
                 const percent = Math.round((e.loaded / e.total) * 100);
                 progressFill.style.width = percent + '%';
                 progressText.innerText = percent + '%';
+                if (progressBytes) {
+                    progressBytes.innerText = `${formatBytes(e.loaded)} из ${formatBytes(e.total)}`;
+                }
+                if (percent >= 100 && progressStatusText) {
+                    progressStatusText.innerText = 'Отправка в облачное хранилище Telegram...';
+                }
             }
         });
 
@@ -186,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = JSON.parse(xhr.responseText);
                 if (xhr.status === 200 && (response.success || response.link)) {
                     showSuccess(response.view_url || response.link);
+                    window.showToast('Файлы успешно загружены!');
                 } else {
                     showError(response.detail || response.message || 'Ошибка загрузки');
                 }
@@ -205,142 +294,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showSuccess(link) {
-        progressContainer.style.display = 'none';
-        resultContainer.style.display = 'block';
-        shareLink.value = link;
-        if (viewBatchBtn) {
-            viewBatchBtn.href = link;
-        }
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (resultContainer) resultContainer.style.display = 'block';
+        if (shareLink) shareLink.value = link;
+        if (viewBatchBtn) viewBatchBtn.href = link;
         resultContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
     function showError(message) {
-        alert('Ошибка: ' + message);
+        window.showToast(message, 'error');
         resetUpload();
     }
 
     function resetUpload() {
         isUploading = false;
         if (dropZone) dropZone.style.display = 'block';
-        if (uploadBtn) uploadBtn.style.display = 'inline-flex';
-        if (previewContainer) {
-            previewContainer.style.display = 'grid';
-            previewContainer.innerHTML = '';
-        }
+        if (stationActions) stationActions.style.display = 'flex';
         if (progressContainer) progressContainer.style.display = 'none';
         filesToUpload = [];
-        updateUploadButton();
+        if (previewContainer) previewContainer.innerHTML = '';
+        updateUIState();
     }
 
-    if (copyBtn) {
+    // Copy Button with Toast
+    if (copyBtn && shareLink) {
         copyBtn.addEventListener('click', () => {
             shareLink.select();
             navigator.clipboard.writeText(shareLink.value).then(() => {
-                const orig = copyBtn.innerText;
-                copyBtn.innerText = 'Скопировано!';
-                copyBtn.style.background = 'var(--primary)';
-                copyBtn.style.color = '#042f2e';
-                setTimeout(() => {
-                    copyBtn.innerText = orig;
-                    copyBtn.style.background = '';
-                    copyBtn.style.color = '';
-                }, 2000);
+                window.showToast('Ссылка скопирована в буфер обмена!');
             }).catch(() => {
-                alert('Скопируйте ссылку вручную');
+                window.showToast('Скопируйте ссылку вручную', 'error');
             });
         });
     }
 
-    // --- Sidebar & History ---
+    // --- History Drawer Logic ---
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const closeSidebar = document.getElementById('close-sidebar');
+    const backdrop = document.getElementById('drawer-backdrop');
     const sidebarContent = document.getElementById('sidebar-content');
-    const modalOverlay = document.getElementById('modal-overlay');
-    const closeModal = document.getElementById('close-modal');
-    const modalContent = document.getElementById('modal-content');
-    const modalCopyBtn = document.getElementById('modal-copy-btn');
 
-    let historyOffset = 0;
-    const historyLimit = 15;
-    let historyLoading = false;
-    let hasMoreHistory = true;
-    let currentModalLink = '';
+    let historyLoaded = false;
 
-    if (sidebarToggle && sidebar && closeSidebar) {
+    if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.add('active');
-            if (historyOffset === 0) loadHistory();
+            if (backdrop) backdrop.classList.add('active');
+            if (!historyLoaded) {
+                loadHistory();
+            }
         });
 
-        closeSidebar.addEventListener('click', () => {
+        const closeDrawer = () => {
             sidebar.classList.remove('active');
-        });
+            if (backdrop) backdrop.classList.remove('active');
+        };
+
+        if (closeSidebar) closeSidebar.addEventListener('click', closeDrawer);
+        if (backdrop) backdrop.addEventListener('click', closeDrawer);
     }
 
-    if (closeModal && modalOverlay) {
-        closeModal.addEventListener('click', () => {
-            modalOverlay.classList.remove('active');
-        });
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) modalOverlay.classList.remove('active');
-        });
-    }
-
-    async function loadHistory(append = false) {
-        if (!sidebarContent || historyLoading || !hasMoreHistory) return;
-        historyLoading = true;
-
-        if (!append) {
-            sidebarContent.innerHTML = '<div class="history-loader" style="text-align: center; color: var(--text-muted); padding: 2rem;">Загрузка...</div>';
-            historyOffset = 0;
-        }
-
+    async function loadHistory() {
+        if (!sidebarContent) return;
         try {
-            const response = await fetch(`/api/history?offset=${historyOffset}&limit=${historyLimit}`);
-            const data = await response.json();
+            const res = await fetch('/api/history?offset=0&limit=30');
+            const data = await res.json();
+            sidebarContent.innerHTML = '';
 
-            if (!append) sidebarContent.innerHTML = '';
+            if (data.success && data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'drawer-history-item';
+                    
+                    let thumbHtml = '';
+                    if (item.first_file_type === 'image' && item.preview_url) {
+                        thumbHtml = `<img src="${item.preview_url}" class="drawer-thumb" alt="Preview">`;
+                    } else {
+                        thumbHtml = `<div class="drawer-thumb">📁</div>`;
+                    }
 
-            if (data.success) {
-                if (data.items.length === 0 && !append) {
-                    sidebarContent.innerHTML = '<div class="history-empty" style="text-align: center; color: var(--text-muted); padding: 2rem;">История пуста</div>';
-                } else {
-                    data.items.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'history-item';
-                        
-                        let previewHtml = '';
-                        if (item.first_file_type === 'image' && item.preview_url) {
-                            previewHtml = `<img src="${item.preview_url}" class="history-preview" alt="Preview">`;
-                        } else {
-                            const icon = getFileIcon(item.first_file_type || '', '');
-                            previewHtml = `<div class="history-preview">${icon}</div>`;
-                        }
+                    el.innerHTML = `
+                        ${thumbHtml}
+                        <div class="drawer-item-info">
+                            <div class="drawer-item-title">#${item.code} (${item.files} файлов)</div>
+                            <div class="drawer-item-date">${item.created_at}</div>
+                        </div>
+                    `;
 
-                        div.innerHTML = `
-                            ${previewHtml}
-                            <div class="history-info">
-                                <span class="history-date">${item.created_at}</span>
-                                <span class="history-stats">${item.files} файл(ов)</span>
-                            </div>
-                        `;
-                        div.addEventListener('click', () => {
-                            window.location.href = item.view_url;
-                        });
-                        sidebarContent.appendChild(div);
+                    el.addEventListener('click', () => {
+                        window.location.href = item.view_url;
                     });
-
-                    historyOffset += data.items.length;
-                    hasMoreHistory = data.has_more;
-                }
+                    sidebarContent.appendChild(el);
+                });
+                historyLoaded = true;
+            } else {
+                sidebarContent.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
+                        <p>История пуста</p>
+                        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Загрузите файлы, чтобы они появились здесь</p>
+                    </div>
+                `;
             }
         } catch (e) {
-            if (sidebarContent) {
-                sidebarContent.innerHTML = '<div style="color: var(--danger); text-align: center; padding: 2rem;">Ошибка загрузки</div>';
-            }
-        } finally {
-            historyLoading = false;
+            sidebarContent.innerHTML = '<div style="color: var(--danger); text-align: center; padding: 2rem;">Ошибка загрузки истории</div>';
         }
     }
 });

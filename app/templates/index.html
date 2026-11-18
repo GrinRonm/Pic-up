@@ -1,88 +1,213 @@
 {% extends "base.html" %}
 
-{% block title %}Pic-up — Универсальный файлообменник (любые файлы до {{ max_size_mb }} МБ){% endblock %}
+{% block title %}Pic-up — Универсальный файлообменник (фото, видео, музыка, любые файлы){% endblock %}
 
 {% block content %}
-<section class="hero-section">
-    <h1>Универсальный файлообменник</h1>
-    <p class="hero-subtitle">
-        Загружайте любые файлы: фото, видео, музыку, документы и архивы.<br>
-        Хранение до {{ expiry_days }} дней. Без регистрации и ограничений скорости.
+<section class="hero-container">
+    <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Версия 2.0 • Поддержка любых типов файлов до {{ max_size_mb }} МБ</span>
+    </div>
+    <h1 class="hero-title">
+        Свободный файлообменник<br>
+        <span class="gradient-text">без границ и ключей</span>
+    </h1>
+    <p class="hero-desc">
+        Загружайте изображения, 4K видео, музыку, архивы и документы. Мгновенная генерация защищённых ссылок и надёжное облачное хранение в Telegram до {{ expiry_days }} дней.
     </p>
-    <div class="hero-badges">
-        <span class="badge">🖼️ Фотографии</span>
-        <span class="badge">🎬 Видео</span>
-        <span class="badge">🎵 Аудио</span>
-        <span class="badge">📄 Документы</span>
-        <span class="badge">📦 Архивы</span>
-        <span class="badge">⚡ Публичный API</span>
+
+    <div class="format-chips">
+        <span class="format-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            Фотографии
+        </span>
+        <span class="format-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+            Видео (MP4, MKV)
+        </span>
+        <span class="format-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            Аудио (MP3, FLAC)
+        </span>
+        <span class="format-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Документы & Архивы
+        </span>
+        <span class="format-chip highlight">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            Открытый REST API
+        </span>
     </div>
 </section>
 
-<div class="upload-card">
+<!-- Main Upload Box -->
+<div class="glass-card upload-station" id="upload-station">
+    <!-- Interactive Drop Zone -->
     <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-glow"></div>
         <div class="drop-zone-content">
-            <div class="upload-icon-wrapper">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
+            <div class="upload-icon-box">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                    <path d="M12 12v9"></path>
+                    <path d="m16 16-4-4-4 4"></path>
                 </svg>
             </div>
-            <span class="drop-title">Перетащите файлы сюда или кликните для выбора</span>
-            <span class="subtext">До {{ max_files }} файлов за раз, до {{ max_size_mb }} МБ каждый (любой формат)</span>
+            <h2 class="drop-heading">Перетащите файлы сюда</h2>
+            <p class="drop-subheading">или <span class="drop-link">выберите файлы на устройстве</span></p>
+            <div class="drop-meta">
+                <span>До {{ max_files }} файлов за раз</span>
+                <span class="dot">•</span>
+                <span>До {{ max_size_mb }} МБ каждый</span>
+                <span class="dot">•</span>
+                <span>Хранение {{ expiry_days }} дней</span>
+            </div>
             <input type="file" id="file-input" multiple hidden>
         </div>
     </div>
 
-    <!-- Preview items container -->
-    <div id="preview-container" class="preview-container"></div>
+    <!-- Preview Container (Appears when files are staged) -->
+    <div id="preview-section" class="preview-section" style="display: none;">
+        <div class="preview-header">
+            <div class="preview-title">
+                <span id="preview-count">0 файлов</span> готово к отправке
+            </div>
+            <button class="btn-text-danger" id="clear-all-btn">Очистить список</button>
+        </div>
+        <div id="preview-container" class="preview-grid"></div>
+    </div>
 
-    <div class="actions">
-        <button id="upload-btn" class="btn primary btn-large" disabled>
+    <!-- Action Toolbar -->
+    <div class="station-actions" id="station-actions">
+        <button id="upload-btn" class="btn btn-primary btn-cta" disabled>
+            <span class="btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+            </span>
             <span class="btn-text">Загрузить файлы</span>
         </button>
     </div>
 
-    <!-- Upload Progress -->
-    <div id="progress-container" class="progress-container" style="display: none;">
-        <div class="progress-bar-wrapper">
-            <div class="progress-bar">
-                <div id="progress-fill" class="progress-fill"></div>
+    <!-- Upload Progress Bar (Active during upload) -->
+    <div id="progress-container" class="progress-box" style="display: none;">
+        <div class="progress-header">
+            <div class="progress-label">
+                <span class="pulsing-spinner"></span>
+                <span id="progress-status-text">Загрузка на сервер...</span>
             </div>
-            <span id="progress-text">0%</span>
+            <span class="progress-percent" id="progress-text">0%</span>
         </div>
-        <p class="progress-status-msg">Загрузка на сервер и отправка в Telegram...</p>
+        <div class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div class="progress-footer">
+            <span id="progress-bytes">Обработка...</span>
+            <span class="progress-hint">Отправка в облачное хранилище Telegram</span>
+        </div>
     </div>
 
-    <!-- Upload Result -->
-    <div id="result-container" class="result-container" style="display: none;">
-        <div class="success-icon">✓</div>
-        <h3>Файлы успешно загружены!</h3>
-        <p class="result-desc">Ссылка для доступа и скачивания подборки готова:</p>
-        <div class="link-box">
-            <input type="text" id="share-link" readonly>
-            <button id="copy-btn" class="btn secondary">Копировать</button>
+    <!-- Upload Result Card -->
+    <div id="result-container" class="result-box" style="display: none;">
+        <div class="result-badge-success">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
         </div>
-        <div class="result-actions">
-            <a href="#" id="view-batch-btn" class="btn primary">Перейти к файлам</a>
-            <a href="/" class="btn secondary">Загрузить ещё</a>
+        <h3 class="result-title">Файлы успешно сохранены!</h3>
+        <p class="result-subtitle">Ссылка на подборку готова для отправки друзьям или коллегам:</p>
+
+        <div class="copy-url-wrapper">
+            <div class="copy-url-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="link-icon">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <input type="text" id="share-link" readonly spellcheck="false">
+                <button id="copy-btn" class="btn btn-copy" title="Скопировать ссылку">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Копировать</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="result-button-group">
+            <a href="#" id="view-batch-btn" class="btn btn-primary">
+                <span>Открыть страницу файлов</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <span>Загрузить ещё</span>
+            </a>
         </div>
     </div>
 </div>
 
-<!-- API Quick Promo Card -->
-<div class="api-promo-card">
-    <div class="api-promo-left">
-        <div class="api-icon">⚡</div>
-        <div>
-            <h3>Бесплатный публичный API без ключей</h3>
-            <p>Загружайте файлы прямо из консоли, скриптов на Python, Node.js, PHP или curl без авторизации.</p>
+<!-- API Showcase Card -->
+<section class="api-showcase-section">
+    <div class="glass-card api-showcase-card">
+        <div class="api-showcase-left">
+            <div class="api-chip">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>Открытый REST API</span>
+            </div>
+            <h2>Загружайте файлы из консоли или кода</h2>
+            <p>
+                Мгновенная интеграция в ваши скрипты, боты и веб-приложения. Без регистрации, токенов и лимитов на количество запросов.
+            </p>
+            <div class="api-features-list">
+                <div class="api-feature-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>POST /api/upload</span>
+                </div>
+                <div class="api-feature-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>HTTP 206 Video Streaming</span>
+                </div>
+                <div class="api-feature-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>ZIP Archive Generator</span>
+                </div>
+            </div>
+            <div class="api-actions">
+                <a href="/api/docs" class="btn btn-primary">Полная документация API</a>
+                <a href="/docs" target="_blank" class="btn btn-secondary">Swagger UI ↗</a>
+            </div>
+        </div>
+
+        <div class="api-showcase-right">
+            <div class="terminal-card">
+                <div class="terminal-bar">
+                    <span class="term-dot red"></span>
+                    <span class="term-dot yellow"></span>
+                    <span class="term-dot green"></span>
+                    <span class="term-title">bash — curl</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="term-line">
+                        <span class="prompt">$</span>
+                        <span class="cmd">curl -X POST "{{ app_url }}/api/upload" \</span>
+                    </div>
+                    <div class="term-line indent">
+                        <span class="flag">-F</span> <span class="arg">"file=@document.pdf"</span>
+                    </div>
+                    <div class="term-output">
+                        <span class="out-success">{</span><br>
+                        &nbsp;&nbsp;<span class="out-key">"success"</span>: <span class="out-val">true</span>,<br>
+                        &nbsp;&nbsp;<span class="out-key">"batch_code"</span>: <span class="out-str">"b69e663586f2e551"</span>,<br>
+                        &nbsp;&nbsp;<span class="out-key">"view_url"</span>: <span class="out-str">"{{ app_url }}/view/?code=..."</span><br>
+                        <span class="out-success">}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="api-promo-right">
-        <a href="/api/docs" class="btn outline">Документация и примеры</a>
-        <a href="/docs" target="_blank" class="btn secondary">Swagger UI</a>
-    </div>
-</div>
+</section>
 {% endblock %}
