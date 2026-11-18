@@ -1,7 +1,10 @@
 import asyncio
 import logging
 from pathlib import Path
-from app.database import get_pending_uploads, update_file_telegram, cleanup_expired
+from app.database import (
+    get_pending_uploads, update_file_telegram,
+    cleanup_expired, increment_upload_attempt
+)
 from app.telegram import upload_file_to_telegram
 from app.config import CACHE_DIR
 
@@ -13,7 +16,8 @@ async def process_single_upload(photo: dict):
     caption = f"Batch #{photo.get('batch_id', '')} - {photo.get('original_name') or filename}"
 
     if not local_path.exists():
-        logger.warning(f"File not found on disk: {local_path}")
+        logger.warning(f"File not found on disk: {local_path}, marking attempt")
+        await increment_upload_attempt(photo["id"])
         return
 
     file_id = await upload_file_to_telegram(local_path, filename, caption)
@@ -25,6 +29,9 @@ async def process_single_upload(photo: dict):
             logger.info(f"Deleted local tmp file: {local_path}")
         except Exception as e:
             logger.warning(f"Could not delete local file: {e}")
+    else:
+        logger.warning(f"Failed to upload {filename} to Telegram, incrementing attempts")
+        await increment_upload_attempt(photo["id"])
 
 async def run_worker_cycle():
     """Runs a single pass over pending uploads and cleans up expired files."""

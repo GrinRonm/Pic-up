@@ -1,10 +1,43 @@
 import httpx
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Any
 from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 logger = logging.getLogger("telegram")
+
+def extract_telegram_file_id(res_data: dict) -> Optional[str]:
+    """
+    Extracts file_id from any Telegram media message response:
+    document, audio, video, animation, voice, video_note, photo, etc.
+    """
+    if not isinstance(res_data, dict):
+        return None
+
+    result = res_data.get("result")
+    if not isinstance(result, dict):
+        return None
+
+    # Check direct media types
+    for key in ["document", "audio", "video", "animation", "voice", "video_note"]:
+        media = result.get(key)
+        if isinstance(media, dict) and "file_id" in media:
+            return media["file_id"]
+
+    # Check photo array (last item is highest quality)
+    photos = result.get("photo")
+    if isinstance(photos, list) and len(photos) > 0:
+        if isinstance(photos[-1], dict) and "file_id" in photos[-1]:
+            return photos[-1]["file_id"]
+
+    # Deep scan all values for file_id
+    for val in result.values():
+        if isinstance(val, dict) and "file_id" in val:
+            return val["file_id"]
+        elif isinstance(val, list) and len(val) > 0 and isinstance(val[-1], dict) and "file_id" in val[-1]:
+            return val[-1]["file_id"]
+
+    return None
 
 async def upload_file_to_telegram(local_path: Path, filename: str, caption: str = "") -> Optional[str]:
     """Uploads a file to Telegram channel via Bot API sendDocument and returns file_id."""
@@ -25,10 +58,12 @@ async def upload_file_to_telegram(local_path: Path, filename: str, caption: str 
             if response.status_code == 200:
                 res_data = response.json()
                 if res_data.get("ok"):
-                    doc = res_data["result"].get("document") or res_data["result"].get("photo", [{}])[-1]
-                    file_id = doc.get("file_id")
-                    logger.info(f"Successfully uploaded {filename} to Telegram: {file_id}")
-                    return file_id
+                    file_id = extract_telegram_file_id(res_data)
+                    if file_id:
+                        logger.info(f"Successfully uploaded {filename} to Telegram: {file_id}")
+                        return file_id
+                    else:
+                        logger.error(f"Could not extract file_id from Telegram response: {res_data}")
                 else:
                     logger.error(f"Telegram API error: {res_data.get('description')}")
             else:

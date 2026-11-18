@@ -25,7 +25,7 @@ async def init_db():
             );
         """)
         
-        # Files table (named photos for backward compatibility)
+        # Files table
         await db.execute("""
             CREATE TABLE IF NOT EXISTS photos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +39,7 @@ async def init_db():
                 telegram_file_id TEXT,
                 telegram_file_path TEXT,
                 status TEXT DEFAULT 'uploading',
+                upload_attempts INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP NOT NULL,
                 ip_address TEXT,
@@ -47,26 +48,19 @@ async def init_db():
         """)
 
         # Add columns if migrating from older db without them
-        try:
-            await db.execute("ALTER TABLE photos ADD COLUMN original_name TEXT;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE photos ADD COLUMN file_type TEXT DEFAULT 'file';")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE photos ADD COLUMN mime_type TEXT;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE photos ADD COLUMN file_size INTEGER DEFAULT 0;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE batches ADD COLUMN session_id TEXT;")
-        except Exception:
-            pass
+        for col_def in [
+            "original_name TEXT",
+            "file_type TEXT DEFAULT 'file'",
+            "mime_type TEXT",
+            "file_size INTEGER DEFAULT 0",
+            "upload_attempts INTEGER DEFAULT 0",
+            "session_id TEXT"
+        ]:
+            try:
+                table = "batches" if "session_id" in col_def else "photos"
+                await db.execute(f"ALTER TABLE {table} ADD COLUMN {col_def};")
+            except Exception:
+                pass
 
         await db.commit()
 
@@ -96,8 +90,8 @@ async def add_file_record(
         cursor = await db.execute("""
             INSERT INTO photos (
                 batch_id, original_name, filename, file_type, mime_type, 
-                file_size, local_path, status, expires_at, ip_address
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'uploading', ?, ?)
+                file_size, local_path, status, upload_attempts, expires_at, ip_address
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'uploading', 0, ?, ?)
         """, (
             batch_id, original_name, filename, file_type, mime_type,
             file_size, local_path, expires_at.strftime("%Y-%m-%d %H:%M:%S"), ip_address
@@ -138,11 +132,21 @@ async def update_file_telegram(file_id: int, telegram_file_id: str, telegram_fil
         """, (telegram_file_id, telegram_file_path, file_id))
         await db.commit()
 
-async def get_pending_uploads(limit: int = 20) -> List[Dict[str, Any]]:
+async def increment_upload_attempt(file_id: int, max_attempts: int = 3):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            UPDATE photos 
+            SET upload_attempts = COALESCE(upload_attempts, 0) + 1,
+                status = CASE WHEN COALESCE(upload_attempts, 0) + 1 >= ? THEN 'failed' ELSE 'uploading' END
+            WHERE id = ?
+        """, (max_attempts, file_id))
+        await db.commit()
+
+async def get_pending_uploads(limit: int = 10) -> List[Dict[str, Any]]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT * FROM photos WHERE status = 'uploading' ORDER BY id ASC LIMIT ?",
+            "SELECT * FROM photos WHERE status = 'uploading' AND COALESCE(upload_attempts, 0) < 3 ORDER BY id ASC LIMIT ?",
             (limit,)
         ) as cursor:
             rows = await cursor.fetchall()
