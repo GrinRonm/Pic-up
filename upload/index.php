@@ -130,7 +130,12 @@ try {
 
     // Start background worker to upload to Telegram
     if (function_exists('popen')) {
-        pclose(popen('start /B php "' . __DIR__ . '/../worker.php"', 'r'));
+        $worker_script = escapeshellarg(__DIR__ . '/../worker.php');
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            pclose(popen('start /B php ' . $worker_script, 'r'));
+        } else {
+            pclose(popen('php ' . $worker_script . ' > /dev/null 2>&1 &', 'r'));
+        }
         log_event($config, "Background worker started for batch: $batch_code");
     }
 

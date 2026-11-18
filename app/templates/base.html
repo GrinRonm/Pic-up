@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pic-up — Универсальный файлообменник{% endblock %}</title>
+    <meta name="description" content="Бесплатный сервис для временного хранения и обмена любыми файлами (фото, видео, документы, архивы) с хранением в Telegram.">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- History Sidebar Button -->
+    <button class="sidebar-toggle" id="sidebar-toggle" title="История загрузок">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- History Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>История загрузок</h2>
+            <button class="close-sidebar" id="close-sidebar">&times;</button>
+        </div>
+        <div class="sidebar-content" id="sidebar-content">
+            <div class="history-loader">Загрузка...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="main-header">
+            <div class="header-brand">
+                <a href="/" class="brand-logo">
+                    <span class="logo-icon">🚀</span>
+                    <span class="logo-text">Pic-up</span>
+                </a>
+                <span class="brand-tag">v2.0 Any File</span>
+            </div>
+            <nav class="header-nav">
+                <a href="/" class="nav-link">Загрузка</a>
+                <a href="/api/docs" class="nav-link btn-api-docs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    Документация API
+                </a>
+                <a href="/docs" target="_blank" class="nav-link nav-swagger">Swagger UI ↗</a>
+            </nav>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2026 Pic-up. Файлообменник с бэкендом в Telegram. Без ограничений по типу файлов.</p>
+            <div class="footer-links">
+                <a href="/api/docs">API документация</a>
+                <span>•</span>
+                <a href="/docs" target="_blank">Swagger</a>
+                <span>•</span>
+                <a href="/redoc" target="_blank">ReDoc</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal for details -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Детали подборки</h2>
+                <button class="close-sidebar" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-content" id="modal-content"></div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="modal-copy-btn">Копировать ссылку</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/scripts.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

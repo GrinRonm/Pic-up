@@ -1,0 +1,9 @@
+.env
+data/
+*.sqlite
+*.sqlite-journal
+logs.txt
+uploads/
+vendor/
+__pycache__/
+*.pyc

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Pic-up — Универсальный файлообменник (любые файлы до {{ max_size_mb }} МБ){% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <h1>Универсальный файлообменник</h1>
+    <p class="hero-subtitle">
+        Загружайте любые файлы: фото, видео, музыку, документы и архивы.<br>
+        Хранение до {{ expiry_days }} дней. Без регистрации и ограничений скорости.
+    </p>
+    <div class="hero-badges">
+        <span class="badge">🖼️ Фотографии</span>
+        <span class="badge">🎬 Видео</span>
+        <span class="badge">🎵 Аудио</span>
+        <span class="badge">📄 Документы</span>
+        <span class="badge">📦 Архивы</span>
+        <span class="badge">⚡ Публичный API</span>
+    </div>
+</section>
+
+<div class="upload-card">
+    <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+            <div class="upload-icon-wrapper">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+            </div>
+            <span class="drop-title">Перетащите файлы сюда или кликните для выбора</span>
+            <span class="subtext">До {{ max_files }} файлов за раз, до {{ max_size_mb }} МБ каждый (любой формат)</span>
+            <input type="file" id="file-input" multiple hidden>
+        </div>
+    </div>
+
+    <!-- Preview items container -->
+    <div id="preview-container" class="preview-container"></div>
+
+    <div class="actions">
+        <button id="upload-btn" class="btn primary btn-large" disabled>
+            <span class="btn-text">Загрузить файлы</span>
+        </button>
+    </div>
+
+    <!-- Upload Progress -->
+    <div id="progress-container" class="progress-container" style="display: none;">
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <span id="progress-text">0%</span>
+        </div>
+        <p class="progress-status-msg">Загрузка на сервер и отправка в Telegram...</p>
+    </div>
+
+    <!-- Upload Result -->
+    <div id="result-container" class="result-container" style="display: none;">
+        <div class="success-icon">✓</div>
+        <h3>Файлы успешно загружены!</h3>
+        <p class="result-desc">Ссылка для доступа и скачивания подборки готова:</p>
+        <div class="link-box">
+            <input type="text" id="share-link" readonly>
+            <button id="copy-btn" class="btn secondary">Копировать</button>
+        </div>
+        <div class="result-actions">
+            <a href="#" id="view-batch-btn" class="btn primary">Перейти к файлам</a>
+            <a href="/" class="btn secondary">Загрузить ещё</a>
+        </div>
+    </div>
+</div>
+
+<!-- API Quick Promo Card -->
+<div class="api-promo-card">
+    <div class="api-promo-left">
+        <div class="api-icon">⚡</div>
+        <div>
+            <h3>Бесплатный публичный API без ключей</h3>
+            <p>Загружайте файлы прямо из консоли, скриптов на Python, Node.js, PHP или curl без авторизации.</p>
+        </div>
+    </div>
+    <div class="api-promo-right">
+        <a href="/api/docs" class="btn outline">Документация и примеры</a>
+        <a href="/docs" target="_blank" class="btn secondary">Swagger UI</a>
+    </div>
+</div>
+{% endblock %}

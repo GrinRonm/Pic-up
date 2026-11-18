@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Подборка #{{ batch_code }} — Pic-up{% endblock %}
+
+{% block content %}
+<div class="view-header-card">
+    <div class="view-meta">
+        <h2>Подборка #{{ batch_code }}</h2>
+        <div class="view-details">
+            <span>📁 Файлов: <strong>{{ total_files }}</strong></span>
+            <span>💾 Общий размер: <strong>{{ total_size }}</strong></span>
+            <span>⏱ Создано: <strong>{{ batch.created_at }}</strong></span>
+            <span>⏳ Доступно до: <strong>{{ batch.expires_at }}</strong></span>
+        </div>
+    </div>
+    <div class="view-actions-bar">
+        <a href="/download/?code={{ batch_code }}" class="btn primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Скачать всё (ZIP)
+        </a>
+        <a href="/qr/?code={{ batch_code }}" target="_blank" class="btn secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            QR-код
+        </a>
+        <a href="/api/batch/{{ batch_code }}" target="_blank" class="btn secondary">📡 JSON API</a>
+        <a href="/api/docs" class="btn secondary">📖 API Docs</a>
+        <a href="/" class="btn outline">⬆️ Загрузить ещё</a>
+    </div>
+</div>
+
+<div class="media-grid">
+    {% for file in files %}
+    <div class="media-card file-type-{{ file.file_type }}">
+        {% if file.file_type == 'image' %}
+            <div class="media-preview image-preview" onclick="openLightbox('{{ file.url }}', '{{ file.original_name }}')">
+                <img src="{{ file.url }}" alt="{{ file.original_name }}" loading="lazy">
+                <div class="preview-overlay">
+                    <span>🔍 Нажмите для увеличения</span>
+                </div>
+            </div>
+        {% elif file.file_type == 'video' %}
+            <div class="media-preview video-preview">
+                <video controls preload="metadata" playsinline class="media-player">
+                    <source src="{{ file.url }}" type="{{ file.mime_type }}">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            </div>
+        {% elif file.file_type == 'audio' %}
+            <div class="media-preview audio-preview">
+                <div class="audio-badge">🎵 АУДИО</div>
+                <audio controls class="media-player">
+                    <source src="{{ file.url }}" type="{{ file.mime_type }}">
+                    Ваш браузер не поддерживает аудио.
+                </audio>
+            </div>
+        {% elif file.file_type == 'archive' %}
+            <div class="media-preview generic-preview archive-bg">
+                <div class="file-icon-large">📦</div>
+                <span class="file-badge-type">АРХИВ</span>
+            </div>
+        {% elif file.file_type == 'document' %}
+            <div class="media-preview generic-preview doc-bg">
+                <div class="file-icon-large">📄</div>
+                <span class="file-badge-type">ДОКУМЕНТ</span>
+            </div>
+        {% else %}
+            <div class="media-preview generic-preview">
+                <div class="file-icon-large">📁</div>
+                <span class="file-badge-type">ФАЙЛ</span>
+            </div>
+        {% endif %}
+
+        <div class="media-card-footer">
+            <div class="file-info-text">
+                <div class="file-name" title="{{ file.original_name }}">{{ file.original_name }}</div>
+                <div class="file-meta-sub">{{ file.size_formatted }}</div>
+            </div>
+            <div class="file-card-buttons">
+                <a href="{{ file.url }}" target="_blank" class="btn-icon" title="Открыть в новой вкладке">↗</a>
+                <a href="{{ file.download_url }}" class="btn-icon btn-download" title="Скачать файл" download>⬇</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="lightbox-modal" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="Full view">
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+</div>
+
+<script>
+function openLightbox(url, title) {
+    const modal = document.getElementById('lightbox-modal');
+    const img = document.getElementById('lightbox-img');
+    const caption = document.getElementById('lightbox-caption');
+    img.src = url;
+    caption.innerText = title;
+    modal.classList.add('active');
+}
+function closeLightbox() {
+    document.getElementById('lightbox-modal').classList.remove('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Документация API — Pic-up{% endblock %}
+
+{% block content %}
+<div class="docs-container">
+    <div class="docs-hero">
+        <div class="docs-badge">REST API v2.0</div>
+        <h1>Документация публичного API Pic-up</h1>
+        <p class="docs-subtitle">
+            Публичный API для моментальной загрузки и обмена любыми файлами.<br>
+            <strong>Без ключей API, без токенов, без регистрации.</strong>
+        </p>
+        <div class="docs-hero-actions">
+            <a href="/docs" target="_blank" class="btn primary">Интерактивный Swagger UI ↗</a>
+            <a href="/redoc" target="_blank" class="btn secondary">ReDoc ↗</a>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="docs-section">
+        <h2>Базовый URL</h2>
+        <div class="code-box">
+            <code>{{ app_url }}/api</code>
+        </div>
+    </div>
+
+    <!-- Endpoint 1: Upload -->
+    <div class="docs-section">
+        <div class="endpoint-header">
+            <span class="http-badge post">POST</span>
+            <span class="endpoint-path">/api/upload</span>
+        </div>
+        <p>Загрузка одного или нескольких файлов (фото, видео, музыка, документы, архивы). Возвращает ссылки на просмотр, скачивание и QR-код.</p>
+
+        <h3>Параметры запроса (multipart/form-data)</h3>
+        <table class="params-table">
+            <thead>
+                <tr>
+                    <th>Поле</th>
+                    <th>Тип</th>
+                    <th>Обязательное</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>files</code> или <code>file</code></td>
+                    <td>File / Binary</td>
+                    <td>Да</td>
+                    <td>Один или несколько файлов (до {{ max_files }} файлов, до {{ max_size_mb }} МБ каждый).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Примеры запросов</h3>
+
+        <div class="tabs-wrapper">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab(event, 'tab-curl')">cURL</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-python')">Python</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-js')">JavaScript / Node.js</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-php')">PHP</button>
+            </div>
+
+            <!-- Tab: cURL -->
+            <div id="tab-curl" class="tab-content active">
+                <pre class="code-block"><code># Загрузка одного файла
+curl -X POST "{{ app_url }}/api/upload" \
+  -F "file=@photo.jpg"
+
+# Загрузка нескольких файлов
+curl -X POST "{{ app_url }}/api/upload" \
+  -F "files=@video.mp4" \
+  -F "files=@document.pdf"</code></pre>
+            </div>
+
+            <!-- Tab: Python -->
+            <div id="tab-python" class="tab-content">
+                <pre class="code-block"><code>import requests
+
+url = "{{ app_url }}/api/upload"
+
+# Загрузка файла
+with open("my_video.mp4", "rb") as f:
+    files = {"files": ("my_video.mp4", f, "video/mp4")}
+    response = requests.post(url, files=files)
+
+data = response.json()
+print("Ссылка на подборку:", data["view_url"])
+for item in data["files"]:
+    print("Прямая ссылка:", item["url"])</code></pre>
+            </div>
+
+            <!-- Tab: JS -->
+            <div id="tab-js" class="tab-content">
+                <pre class="code-block"><code>const formData = new FormData();
+formData.append('files', fileInput.files[0]);
+
+fetch('{{ app_url }}/api/upload', {
+  method: 'POST',
+  body: formData
+})
+.then(res => res.json())
+.then(data => {
+  console.log('Ссылка:', data.view_url);
+  console.log('Файлы:', data.files);
+});</code></pre>
+            </div>
+
+            <!-- Tab: PHP -->
+            <div id="tab-php" class="tab-content">
+                <pre class="code-block"><code>&lt;?php
+$ch = curl_init('{{ app_url }}/api/upload');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, [
+    'files[0]' => new CURLFile('/path/to/archive.zip')
+]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$result = json_decode($response, true);
+echo "Ссылка: " . $result['view_url'];
+?&gt;</code></pre>
+            </div>
+        </div>
+
+        <h3>Пример ответа (200 OK)</h3>
+        <pre class="code-block json"><code>{
+  "success": true,
+  "batch_code": "4121a911828f99b6",
+  "view_url": "{{ app_url }}/view/?code=4121a911828f99b6",
+  "qr_url": "{{ app_url }}/qr/?code=4121a911828f99b6",
+  "download_all_url": "{{ app_url }}/download/?code=4121a911828f99b6",
+  "files_count": 1,
+  "files": [
+    {
+      "original_name": "example_video.mp4",
+      "filename": "7499c60fadf544ec.mp4",
+      "file_type": "video",
+      "mime_type": "video/mp4",
+      "size_bytes": 15420100,
+      "size_formatted": "14.7 MB",
+      "url": "{{ app_url }}/i/7499c60fadf544ec.mp4",
+      "download_url": "{{ app_url }}/download/file/7499c60fadf544ec.mp4"
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <!-- Endpoint 2: Batch Info -->
+    <div class="docs-section">
+        <div class="endpoint-header">
+            <span class="http-badge get">GET</span>
+            <span class="endpoint-path">/api/batch/{code}</span>
+        </div>
+        <p>Получение информации о подборке и списка файлов в JSON формате.</p>
+        <pre class="code-block"><code>curl "{{ app_url }}/api/batch/4121a911828f99b6"</code></pre>
+    </div>
+
+    <!-- Endpoint 3: File Stream -->
+    <div class="docs-section">
+        <div class="endpoint-header">
+            <span class="http-badge get">GET</span>
+            <span class="endpoint-path">/i/{filename}</span>
+        </div>
+        <p>Прямой просмотр и потоковое воспроизведение файла. Поддерживает заголовок Range (HTTP 206) для перемотки видео и аудио в любых браузерах.</p>
+        <pre class="code-block"><code>curl -I "{{ app_url }}/i/7499c60fadf544ec.mp4"</code></pre>
+    </div>
+
+    <!-- Endpoint 4: Direct Download -->
+    <div class="docs-section">
+        <div class="endpoint-header">
+            <span class="http-badge get">GET</span>
+            <span class="endpoint-path">/download/file/{filename}</span>
+        </div>
+        <p>Прямое скачивание конкретного файла с заголовком <code>Content-Disposition: attachment</code> с оригинальным именем.</p>
+    </div>
+
+    <!-- Endpoint 5: ZIP Download -->
+    <div class="docs-section">
+        <div class="endpoint-header">
+            <span class="http-badge get">GET</span>
+            <span class="endpoint-path">/download/{code}</span>
+        </div>
+        <p>Скачивание всех файлов подборки одним ZIP архивом.</p>
+    </div>
+</div>
+
+<script>
+function switchTab(evt, tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    evt.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+</script>
+{% endblock %}

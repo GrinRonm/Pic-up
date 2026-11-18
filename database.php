@@ -14,7 +14,8 @@ try {
         batch_code TEXT UNIQUE NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         expires_at DATETIME NOT NULL,
-        ip_address TEXT NOT NULL
+        ip_address TEXT NOT NULL,
+        session_id TEXT
     )");
 
     // Create photos table
